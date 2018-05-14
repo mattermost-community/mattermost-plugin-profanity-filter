@@ -1,0 +1,28 @@
+{
+  "id": "mattermost-profanity-filter",
+  "name": "Profanity Filter",
+  "description": "For filtering out naughty words.",
+  "version": "0.0.2",
+  "backend": {
+    "executable": "server/plugin.exe"
+  },
+  "settings_schema": {
+    "settings": [
+      {
+        "key": "RejectPosts",
+        "display_name": "Reject Posts",
+        "type": "bool",
+        "help_text": "If set the plugin will reject posts containing profanity instead of censoring."
+      },
+      {
+        "key": "CensorCharacter",
+        "display_name": "Censor Character",
+        "type": "text",
+        "help_text": "The character(s) to use to censor profanity. Censored words' letters will be replaced with this character. Note that markdown will be interpreted. You can escape markdown character with a backslash. For using * you type \\*.",
+        "placeholder": "Ex. \\*",
+        "default": "\\*"
+      }
+    ],
+    "footer": ""
+  }
+}
