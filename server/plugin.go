@@ -3,30 +3,24 @@ package main
 import (
 	"net/http"
 	"strings"
-	"sync/atomic"
 
 	"github.com/mattermost/mattermost-server/model"
 	"github.com/mattermost/mattermost-server/plugin"
 )
 
 type Plugin struct {
-	api           plugin.API
-	configuration atomic.Value
-	badWords      map[string]bool
+	plugin.MattermostPlugin
+	badWords map[string]bool
+
+	RejectPosts     bool
+	CensorCharacter string
 }
 
-func (p *Plugin) OnActivate(api plugin.API) error {
-	p.api = api
-	if err := p.OnConfigurationChange(); err != nil {
-		return err
-	}
+func main() {
+	plugin.ClientMain(&Plugin{})
+}
 
-	config := p.config()
-	config.SetDefaults()
-	if err := config.IsValid(); err != nil {
-		return err
-	}
-
+func (p *Plugin) OnActivate() error {
 	p.badWords = make(map[string]bool, len(badWords))
 	for _, word := range badWords {
 		p.badWords[word] = true
@@ -35,24 +29,7 @@ func (p *Plugin) OnActivate(api plugin.API) error {
 	return nil
 }
 
-func (p *Plugin) config() *Configuration {
-	return p.configuration.Load().(*Configuration)
-}
-
-func (p *Plugin) OnConfigurationChange() error {
-	var configuration Configuration
-	err := p.api.LoadPluginConfiguration(&configuration)
-	p.configuration.Store(&configuration)
-	return err
-}
-
-func (p *Plugin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	config := p.config()
-	if err := config.IsValid(); err != nil {
-		http.Error(w, "This plugin is not configured.", http.StatusNotImplemented)
-		return
-	}
-
+func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	switch path := r.URL.Path; path {
 	default:
 		http.NotFound(w, r)
@@ -69,10 +46,10 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 	words := strings.Split(message, " ")
 	for i, word := range words {
 		if p.WordIsBad(word) {
-			if p.config().RejectPosts {
+			if p.RejectPosts {
 				return nil, "Profane word not allowed: " + word
 			}
-			words[i] = strings.Repeat(p.config().CensorCharacter, len(word))
+			words[i] = strings.Repeat(p.CensorCharacter, len(word))
 		}
 	}
 
@@ -80,10 +57,10 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 	return post, ""
 }
 
-func (p *Plugin) MessageWillBePosted(post *model.Post) (*model.Post, string) {
+func (p *Plugin) MessageWillBePosted(c *plugin.Context, post *model.Post) (*model.Post, string) {
 	return p.FilterPost(post)
 }
 
-func (p *Plugin) MessageWillBeUpdated(newPost *model.Post, _ *model.Post) (*model.Post, string) {
+func (p *Plugin) MessageWillBeUpdated(c *plugin.Context, newPost *model.Post, _ *model.Post) (*model.Post, string) {
 	return p.FilterPost(newPost)
 }
