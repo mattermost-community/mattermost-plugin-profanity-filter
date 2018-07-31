@@ -1,23 +1,17 @@
-# mattermost-plugin-profanity-filter
+# Mattermost Profanity Filter Plugin (Beta)
 
-This plugin has verious methods of limiting profanity use on your Mattermost server.
+This plugin allows you to censor profanity on your Mattermost server.
+
+**Supported Mattermost Server Versions: 5.2+**
 
 ## Installation
 
-Go to the [releases page of this Github repository](https://github.com/mattermost/mattermost-plugin-profanity-filter/releases) and download the latest release for your server architecture. You can upload this file in the Mattermost system console to install the plugin.
+1. Go to the [releases page of this Github repository](https://github.com/mattermost/mattermost-plugin-antivirus/releases) and download the latest release for your Mattermost server.
+2. Upload this file in the Mattermost System Console under **System Console > Plugins > Management** to install the plugin. To learn more about how to upload a plugin, [see the documentation](https://docs.mattermost.com/administration/plugins.html#plugin-uploads).
+3. Activate the plugin at **System Console > Plugins > Management**.
 
-## Developing
-
-This plugin contains both a server and web app portion.
-
-Use `make dist` to build distributions of the plugin that you can upload to a Mattermost server for testing.
-
-Use `make check-style` to check the style for the whole plugin.
-
-### Server
+### Usage
 
 Inside the `/server` directory, you will find the Go files that make up the server-side of the plugin. Within there, build the plugin like you would any other Go application.
 
-### Web App
-
-Inside the `/webapp` directory, you will find the JS and React files that make up the client-side of the plugin. Within there, modify files and components as necessary. Test your syntax by running `npm run build`.
+To configure what words are censored on your system, edit the `/server/badwords.go` file.
