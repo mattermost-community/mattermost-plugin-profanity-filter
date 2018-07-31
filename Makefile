@@ -51,11 +51,18 @@ dist: plugin.json
 	mkdir -p dist/profanity-filter/server
 	mv dist/intermediate/plugin_linux_amd64 dist/profanity-filter/server/plugin.exe
 	cd dist && tar -zcvf mattermost-profanity-filter-plugin-linux-amd64.tar.gz profanity-filter/*
+	mv dist/intermediate/plugin_windows_amd64.exe dist/profanity-filter/server/plugin.exe
+	cd dist && tar -zcvf mattermost-profanity-filter-plugin-windows-amd64.tar.gz profanity-filter/*
+	mv dist/intermediate/plugin_darwin_amd64 dist/profanity-filter/server/plugin.exe
+	cd dist && tar -zcvf mattermost-profanity-filter-plugin-darwin-amd64.tar.gz profanity-filter/*
 
 	# Clean up temp files
+	rm -rf dist/profanity-filter
 	rm -rf dist/intermediate
 
-	@echo Linux plugin built at: dist/mattermost-zoom-plugin-linux-amd64.tar.gz
+	@echo Linux plugin built at: dist/mattermost-profanity-filter-plugin-linux-amd64.tar.gz
+	@echo MacOS X plugin built at: dist/mattermost-profanity-filter-plugin-darwin-amd64.tar.gz
+	@echo Windows plugin built at: dist/mattermost-profanity-filter-plugin-windows-amd64.tar.gz
 
 localdeploy: dist
 	cp dist/mattermost-profanity-filter-plugin-$(GOOS)-$(GOARCH).tar.gz ../mattermost-server/plugins/
