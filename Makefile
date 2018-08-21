@@ -1,82 +1,126 @@
-.PHONY: build test run clean stop check-style gofmt dist localdeploy
+GO ?= $(shell command -v go 2> /dev/null)
+DEP ?= $(shell command -v dep 2> /dev/null)
+NPM ?= $(shell command -v npm 2> /dev/null)
+HTTP ?= $(shell command -v http 2> /dev/null)
+CURL ?= $(shell command -v curl 2> /dev/null)
+MANIFEST_FILE ?= plugin.json
 
-GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
-GOARCH=amd64
+# Verify environment, and define PLUGIN_ID, HAS_SERVER and HAS_WEBAPP as needed.
+include build/setup.mk
 
-check-style: gofmt
-	@echo Checking for style guide compliance
+# all, the default target, tests, builds and bundles the plugin.
+all: test dist
 
-	cd webapp && npm run check
+# apply propagates the plugin id into the server/ and webapp/ folders as required.
+.PHONY: apply
+apply:
+	./build/bin/manifest apply
 
-gofmt:
-	@echo Running GOFMT
-
-	@for package in $$(go list ./server/...); do \
-		echo "Checking "$$package; \
-		files=$$(go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' $$package); \
-		if [ "$$files" ]; then \
-			gofmt_output=$$(gofmt -d -s $$files 2>&1); \
-			if [ "$$gofmt_output" ]; then \
-				echo "$$gofmt_output"; \
-				echo "gofmt failure"; \
-				exit 1; \
-			fi; \
-		fi; \
-	done
-	@echo "gofmt success"; \
-
-webapp/.npminstall:
-	@echo Getting dependencies using npm
-
-	cd webapp && npm install
+# server/.depensure ensures the server dependencies are installed
+server/.depensure:
+ifneq ($(HAS_SERVER),)
+	cd server && $(DEP) ensure
 	touch $@
+endif
 
-dist: plugin.json
-	@echo Building plugin
+# server builds the server, if it exists, including support for multiple architectures
+.PHONY: server
+server: server/.depensure
+ifneq ($(HAS_SERVER),)
+	mkdir -p server/dist;
+	cd server && env GOOS=linux GOARCH=amd64 $(GO) build -o dist/plugin-linux-amd64;
+	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build -o dist/plugin-darwin-amd64;
+	cd server && env GOOS=windows GOARCH=amd64 $(GO) build -o dist/plugin-windows-amd64.exe;
+endif
 
-	# Clean old dist
-	rm -rf dist
-	rm -f server/plugin.exe
+# webapp/.npminstall ensures NPM dependencies are installed without having to run this all the time
+webapp/.npminstall:
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && $(NPM) install
+	touch $@
+endif
 
-	# Build files from server
-	cd server && go get github.com/mitchellh/gox
-	$(shell go env GOPATH)/bin/gox -osarch='darwin/amd64 linux/amd64 windows/amd64' -output 'dist/intermediate/plugin_{{.OS}}_{{.Arch}}' ./server
+# webapp builds the webapp, if it exists
+.PHONY: webapp
+webapp: webapp/.npminstall
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && $(NPM) run build;
+endif
 
-	mkdir -p dist/profanity-filter/
+# bundle generates a tar bundle of the plugin for install
+.PHONY: bundle
+bundle:
+	rm -rf dist/
+	mkdir -p dist/$(PLUGIN_ID)
+	cp $(MANIFEST_FILE) dist/$(PLUGIN_ID)/
+ifneq ($(HAS_SERVER),)
+	mkdir -p dist/$(PLUGIN_ID)/server/dist;
+	cp -r server/dist/* dist/$(PLUGIN_ID)/server/dist/;
+endif
+ifneq ($(HAS_WEBAPP),)
+	mkdir -p dist/$(PLUGIN_ID)/webapp/dist;
+	cp -r webapp/dist/* dist/$(PLUGIN_ID)/webapp/dist/;
+endif
+	cd dist && tar -cvzf $(PLUGIN_ID).tar.gz $(PLUGIN_ID)
 
-	# Copy plugin files
-	cp plugin.json dist/profanity-filter/
+	@echo plugin built at: dist/$(PLUGIN_ID).tar.gz
 
-	# Copy server executables & compress plugin
-	mkdir -p dist/profanity-filter/server
-	mv dist/intermediate/plugin_linux_amd64 dist/profanity-filter/server/plugin.exe
-	cd dist && tar -zcvf mattermost-profanity-filter-plugin-linux-amd64.tar.gz profanity-filter/*
-	mv dist/intermediate/plugin_windows_amd64.exe dist/profanity-filter/server/plugin.exe
-	cd dist && tar -zcvf mattermost-profanity-filter-plugin-windows-amd64.tar.gz profanity-filter/*
-	mv dist/intermediate/plugin_darwin_amd64 dist/profanity-filter/server/plugin.exe
-	cd dist && tar -zcvf mattermost-profanity-filter-plugin-darwin-amd64.tar.gz profanity-filter/*
+# dist builds and bundles the plugin
+.PHONY: dist
+dist: apply \
+      server \
+      webapp \
+      bundle
 
-	# Clean up temp files
-	rm -rf dist/profanity-filter
-	rm -rf dist/intermediate
+# deploy installs the plugin to a (development) server, using the API if appropriate environment
+# variables are defined, or copying the files directly to a sibling mattermost-server directory
+.PHONY: deploy
+deploy: dist
+ifneq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWORD),$(HTTP)),)
+	@echo "Installing plugin via API"
+		(TOKEN=`http --print h POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login login_id=$(MM_ADMIN_USERNAME) password=$(MM_ADMIN_PASSWORD) | grep Token | cut -f2 -d' '` && \
+		  http --print b GET $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/me Authorization:"Bearer $$TOKEN" && \
+			http --print b DELETE $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID) Authorization:"Bearer $$TOKEN" && \
+			http --print b --check-status --form POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins plugin@dist/$(PLUGIN_ID).tar.gz Authorization:"Bearer $$TOKEN" && \
+		  http --print b POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable Authorization:"Bearer $$TOKEN" && \
+		  http --print b POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/logout Authorization:"Bearer $$TOKEN" \
+	  )
+else ifneq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWORD),$(CURL)),)
+	@echo "Installing plugin via API"
+	$(eval TOKEN := $(shell curl -i -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login -d '{"login_id": "$(MM_ADMIN_USERNAME)", "password": "$(MM_ADMIN_PASSWORD)"}' | grep Token | cut -f2 -d' ' 2> /dev/null))
+	@curl -s -H "Authorization: Bearer $(TOKEN)" -X DELETE $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID) > /dev/null
+	@curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins -F "plugin=@dist/$(PLUGIN_ID).tar.gz" > /dev/null && \
+		curl -s -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable > /dev/null && \
+		echo "OK." || echo "Sorry, something went wrong."
+else ifneq ($(wildcard ../mattermost-server/.*),)
+	@echo "Installing plugin via filesystem. Server restart and manual plugin enabling required"
+	mkdir -p ../mattermost-server/plugins
+	tar -C ../mattermost-server/plugins -zxvf dist/$(PLUGIN_ID).tar.gz
+else
+	@echo "No supported deployment method available. Install plugin manually."
+endif
 
-	@echo Linux plugin built at: dist/mattermost-profanity-filter-plugin-linux-amd64.tar.gz
-	@echo MacOS X plugin built at: dist/mattermost-profanity-filter-plugin-darwin-amd64.tar.gz
-	@echo Windows plugin built at: dist/mattermost-profanity-filter-plugin-windows-amd64.tar.gz
+# test runs any lints and unit tests defined for the server and webapp, if they exist
+.PHONY: test
+test: server/.depensure webapp/.npminstall
+ifneq ($(HAS_SERVER),)
+	cd server && $(GO) test -v -coverprofile=coverage.txt ./...
+endif
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && $(NPM) run fix;
+endif
 
-localdeploy: dist
-	cp dist/mattermost-profanity-filter-plugin-$(GOOS)-$(GOARCH).tar.gz ../mattermost-server/plugins/
-	rm -rf ../mattermost-server/plugins/profanity-filter
-	tar -C ../mattermost-server/plugins/ -zxvf ../mattermost-server/plugins/mattermost-profanity-filter-plugin-$(GOOS)-$(GOARCH).tar.gz
-
-stop:
-	@echo Not yet implemented
-
+# clean removes all build artifacts
+.PHONY: clean
 clean:
-	@echo Cleaning plugin
-
-	rm -rf dist
-	rm -rf webapp/dist
-	rm -rf webapp/node_modules
-	rm -rf webapp/.npminstall
-	rm -f server/plugin.exe
+	rm -fr dist/
+ifneq ($(HAS_SERVER),)
+	rm -fr server/dist
+	rm -fr server/.depensure
+endif
+ifneq ($(HAS_WEBAPP),)
+	rm -fr webapp/.npminstall
+	rm -fr webapp/dist
+	rm -fr webapp/node_modules
+endif
+	rm -fr build/bin/
