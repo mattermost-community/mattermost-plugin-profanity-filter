@@ -2,7 +2,7 @@
   "id": "mattermost-profanity-filter",
   "name": "Profanity Filter",
   "description": "For filtering out naughty words.",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "backend": {
     "executable": "server/plugin.exe"
   },
