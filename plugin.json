@@ -2,9 +2,13 @@
   "id": "mattermost-profanity-filter",
   "name": "Profanity Filter",
   "description": "For filtering out naughty words.",
-  "version": "0.1.0",
-  "backend": {
-    "executable": "server/plugin.exe"
+  "version": "0.1.1",
+  "server": {
+      "executables": {
+          "linux-amd64": "server/dist/plugin-linux-amd64",
+          "darwin-amd64": "server/dist/plugin-darwin-amd64",
+          "windows-amd64": "server/dist/plugin-windows-amd64.exe"
+      }
   },
   "settings_schema": {
     "settings": [
@@ -23,6 +27,7 @@
         "default": "\\*"
       }
     ],
+    "header": "",
     "footer": ""
   }
 }
