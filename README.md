@@ -1,4 +1,4 @@
-# Mattermost Profanity Filter Plugin (Beta) [![CircleCI](https://circleci.com/gh/mattermost/mattermost-plugin-profanity-filter.svg?style=svg)](https://circleci.com/gh/mattermost/mattermost-plugin-profanity-filter)
+# Mattermost Profanity Filter Plugin (Beta) ![CircleCI branch](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-profanity-filter/master.svg)
 
 This plugin allows you to censor profanity on your Mattermost server.
 
