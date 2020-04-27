@@ -22,6 +22,7 @@ require (
 	go.uber.org/zap v1.8.0 // indirect
 	golang.org/x/net v0.0.0-20180706051357-32a936f46389 // indirect
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
+	golang.org/x/text v0.3.0
 	google.golang.org/genproto v0.0.0-20180627194029-ff3583edef7d // indirect
 	google.golang.org/grpc v1.13.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3 // indirect
