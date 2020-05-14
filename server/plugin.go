@@ -38,8 +38,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 }
 
 func (p *Plugin) WordIsBad(word string) bool {
-	word := strings.ToLower(word)
-	_, ok := p.badWords[word]
+	_, ok := p.badWords[strings.ToLower(word)]
 	return ok
 }
 
