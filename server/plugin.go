@@ -22,9 +22,8 @@ func main() {
 
 func (p *Plugin) OnActivate() error {
 	p.badWords = make(map[string]bool, len(badWords))
-	word := strings.ToLower(word)
 	for _, word := range badWords {
-		p.badWords[word] = true
+		p.badWords[strings.ToLower(word)] = true
 	}
 
 	return nil
