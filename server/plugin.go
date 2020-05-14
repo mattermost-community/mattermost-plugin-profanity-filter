@@ -22,7 +22,7 @@ func main() {
 
 func (p *Plugin) OnActivate() error {
 	p.badWords = make(map[string]bool, len(badWords))
-	word := string.ToLower(word)
+	word := strings.ToLower(word)
 	for _, word := range badWords {
 		p.badWords[word] = true
 	}
@@ -38,7 +38,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 }
 
 func (p *Plugin) WordIsBad(word string) bool {
-	word := string.ToLower(word)
+	word := strings.ToLower(word)
 	_, ok := p.badWords[word]
 	return ok
 }
