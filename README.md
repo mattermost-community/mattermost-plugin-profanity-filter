@@ -14,4 +14,4 @@ This plugin allows you to censor profanity on your Mattermost server.
 
 Inside the `/server` directory, you will find the Go files that make up the server-side of the plugin. Within there, build the plugin like you would any other Go application.
 
-To configure what words are censored on your system, edit the `/server/badwords.go` file.
+To configure what words are censored on your server, edit the bad words list in **System Console > Plugins > Profanity Filter > Bad words list**.
