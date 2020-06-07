@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"strings"
+	"sync"
 	"unicode"
 
 	"golang.org/x/text/runes"
@@ -15,23 +16,15 @@ import (
 
 type Plugin struct {
 	plugin.MattermostPlugin
-	badWords map[string]bool
 
-	RejectPosts     bool
-	CensorCharacter string
+	configurationLock sync.RWMutex
+	configuration     *configuration
+
+	badWords map[string]bool
 }
 
 func main() {
 	plugin.ClientMain(&Plugin{})
-}
-
-func (p *Plugin) OnActivate() error {
-	p.badWords = make(map[string]bool, len(badWords))
-	for _, word := range badWords {
-		p.badWords[strings.ToLower(removeAccents(word))] = true
-	}
-
-	return nil
 }
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
@@ -47,14 +40,16 @@ func (p *Plugin) WordIsBad(word string) bool {
 }
 
 func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
+	configuration := p.getConfiguration()
+
 	message := post.Message
 	words := strings.Split(message, " ")
 	for i, word := range words {
 		if p.WordIsBad(word) {
-			if p.RejectPosts {
+			if configuration.RejectPosts {
 				return nil, "Profane word not allowed: " + word
 			}
-			words[i] = strings.Repeat(p.CensorCharacter, len(word))
+			words[i] = strings.Repeat(configuration.CensorCharacter, len(word))
 		}
 	}
 
