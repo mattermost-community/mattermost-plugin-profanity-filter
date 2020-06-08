@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"strings"
 	"sync"
 	"unicode"
@@ -10,28 +9,21 @@ import (
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 
-	"github.com/mattermost/mattermost-server/model"
-	"github.com/mattermost/mattermost-server/plugin"
+	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v5/plugin"
 )
 
 type Plugin struct {
 	plugin.MattermostPlugin
 
+	// configurationLock synchronizes access to the configuration.
 	configurationLock sync.RWMutex
-	configuration     *configuration
+
+	// configuration is the active plugin configuration. Consult getConfiguration and
+	// setConfiguration for usage.
+	configuration *configuration
 
 	badWords map[string]bool
-}
-
-func main() {
-	plugin.ClientMain(&Plugin{})
-}
-
-func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	switch path := r.URL.Path; path {
-	default:
-		http.NotFound(w, r)
-	}
 }
 
 func (p *Plugin) WordIsBad(word string) bool {
@@ -57,11 +49,11 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 	return post, ""
 }
 
-func (p *Plugin) MessageWillBePosted(c *plugin.Context, post *model.Post) (*model.Post, string) {
+func (p *Plugin) MessageWillBePosted(_ *plugin.Context, post *model.Post) (*model.Post, string) {
 	return p.FilterPost(post)
 }
 
-func (p *Plugin) MessageWillBeUpdated(c *plugin.Context, newPost *model.Post, _ *model.Post) (*model.Post, string) {
+func (p *Plugin) MessageWillBeUpdated(_ *plugin.Context, newPost *model.Post, _ *model.Post) (*model.Post, string) {
 	return p.FilterPost(newPost)
 }
 
