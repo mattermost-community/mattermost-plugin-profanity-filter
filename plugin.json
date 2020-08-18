@@ -2,7 +2,11 @@
   "id": "mattermost-profanity-filter",
   "name": "Profanity Filter",
   "description": "For filtering out naughty words.",
+  "homepage_url": "https://github.com/mattermost/mattermost-plugin-profanity-filter",
+  "support_url": "https://github.com/mattermost/mattermost-plugin-profanity-filter/issues",
+  "release_notes_url": "https://github.com/mattermost/mattermost-plugin-profanity-filter/releases/tag/v1.0.0",
   "version": "0.1.1",
+  "min_server_version": "5.2.0",
   "server": {
     "executables": {
       "linux-amd64": "server/dist/plugin-linux-amd64",
