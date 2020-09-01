@@ -1,7 +1,7 @@
 {
   "id": "mattermost-profanity-filter",
   "name": "Profanity Filter",
-  "description": "For filtering out naughty words.",
+  "description": "Censor out profanity from user messages in real-time based on a list of words.",
   "homepage_url": "https://github.com/mattermost/mattermost-plugin-profanity-filter",
   "support_url": "https://github.com/mattermost/mattermost-plugin-profanity-filter/issues",
   "release_notes_url": "https://github.com/mattermost/mattermost-plugin-profanity-filter/releases/tag/v1.0.0",
