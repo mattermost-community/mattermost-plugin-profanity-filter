@@ -13,7 +13,7 @@ This plugin allows you to censor profanity on your Mattermost server. The plugin
 ## Plugin Marketplace 
 
 1. Go to **Main Menu > Plugin Marketplace** in Mattermost.
-2. Search for "Profanity Filter" or manually find the plugin from the list and click Install
+2. Search for "Profanity Filter" or manually find the plugin from the list and click **Install**
 3. Once the plugin has downloaded and been installed, click **Configure**.
 
 ## Manual Installation
