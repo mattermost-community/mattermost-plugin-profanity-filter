@@ -83,7 +83,7 @@ func (p *Plugin) OnConfigurationChange() error {
 
 	p.setConfiguration(configuration)
 
-	badWordsFromSettings := strings.Split(configuration.BadWordsList, " ")
+	badWordsFromSettings := strings.Split(configuration.BadWordsList, ",")
 	p.badWords = make(map[string]bool, len(badWordsFromSettings))
 	for _, word := range badWordsFromSettings {
 		p.badWords[strings.ToLower(removeAccents(word))] = true

@@ -34,18 +34,18 @@ func (p *Plugin) WordIsBad(word string) bool {
 func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 	configuration := p.getConfiguration()
 
-	message := post.Message
-	words := strings.Split(message, " ")
-	for i, word := range words {
-		if p.WordIsBad(word) {
+	for badWord := range p.badWords {
+		matched := strings.Contains(post.Message, badWord)
+
+		if matched {
 			if configuration.RejectPosts {
-				return nil, "Profane word not allowed: " + word
+				return nil, "Profane word not allowed: " + badWord
 			}
-			words[i] = strings.Repeat(configuration.CensorCharacter, len(word))
+
+			post.Message = strings.ReplaceAll(post.Message, badWord, strings.Repeat("*", len(badWord)))
 		}
 	}
 
-	post.Message = strings.Join(words, " ")
 	return post, ""
 }
 
