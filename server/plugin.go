@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 	"unicode"
@@ -39,6 +40,10 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 	for i, word := range words {
 		if p.WordIsBad(word) {
 			if configuration.RejectPosts {
+				p.API.SendEphemeralPost(post.UserId, &model.Post{
+					ChannelId: post.ChannelId,
+					Message:   fmt.Sprintf(configuration.WarningMessage, word),
+				})
 				return nil, "Profane word not allowed: " + word
 			}
 			words[i] = strings.Repeat(configuration.CensorCharacter, len(word))
