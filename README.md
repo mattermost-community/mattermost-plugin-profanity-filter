@@ -24,4 +24,4 @@ This plugin allows you to censor profanity on your Mattermost server. The plugin
 
 ### Usage
 
-To configure what words are censored on your server, edit the bad words list in **System Console > Plugins > Profanity Filter > Bad words list**.
+You can edit the bad words list in **System Console > Plugins > Profanity Filter > Bad Words list**.
