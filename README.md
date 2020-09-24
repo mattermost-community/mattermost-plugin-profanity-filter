@@ -6,7 +6,7 @@
 [![HW](https://img.shields.io/github/issues/mattermost/mattermost-plugin-profanity-filter/Up%20For%20Grabs?color=dark%20green&label=Help%20Wanted)](https://github.com/mattermost/mattermost-plugin-profanity-filter/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22Up+For+Grabs%22+label%3A%22Help+Wanted%22)
 
 
-This plugin allows you to censor profanity on your Mattermost server. The plugin will check all messages before they are posted to any channel for matches against the configured "Bad Words List". Any word matches that a user tries to submit as a message, will be replaced with a series of "*"s to replace the characters of that word.   
+This plugin allows you to censor profanity on your Mattermost server. The plugin checks all messages for matches against the configured "Bad Words List" before they are posted to any channel. The characters in any word matches are replaced with a series of "*"s.
 
 **Supported Mattermost Server Versions: 5.2+**
 
