@@ -43,6 +43,7 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 				p.API.SendEphemeralPost(post.UserId, &model.Post{
 					ChannelId: post.ChannelId,
 					Message:   fmt.Sprintf(configuration.WarningMessage, word),
+					RootId:    post.RootId,
 				})
 				return nil, "Profane word not allowed: " + word
 			}
