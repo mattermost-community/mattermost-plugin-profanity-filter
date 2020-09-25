@@ -1,6 +1,7 @@
 package main
 
 import (
+	"regexp"
 	"strings"
 	"sync"
 	"unicode"
@@ -23,26 +24,27 @@ type Plugin struct {
 	// setConfiguration for usage.
 	configuration *configuration
 
-	badWords map[string]bool
-}
-
-func (p *Plugin) WordIsBad(word string) bool {
-	_, ok := p.badWords[strings.ToLower(removeAccents(word))]
-	return ok
+	badWordsRegex *regexp.Regexp
 }
 
 func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
-	configuration := p.getConfiguration()
+	postWithoutAccents := removeAccents(post.Message)
 
-	for badWord := range p.badWords {
-		matched := strings.Contains(post.Message, badWord)
+	if p.badWordsRegex.MatchString(postWithoutAccents) {
+		configuration := p.getConfiguration()
 
-		if matched {
-			if configuration.RejectPosts {
-				return nil, "Profane word not allowed: " + badWord
-			}
+		detectedBadWords := p.badWordsRegex.FindAllString(postWithoutAccents, -1)
 
-			post.Message = strings.ReplaceAll(post.Message, badWord, strings.Repeat("*", len(badWord)))
+		if configuration.RejectPosts {
+			return nil, "Profane word not allowed: `" + strings.Join(detectedBadWords, ", ") + "`"
+		}
+
+		for _, word := range detectedBadWords {
+			post.Message = strings.ReplaceAll(
+				post.Message,
+				word,
+				strings.Repeat(p.getConfiguration().CensorCharacter, len(word)),
+			)
 		}
 	}
 
