@@ -88,8 +88,12 @@ func (p *Plugin) OnConfigurationChange() error {
 
 	// Addind space around the words
 	regexString := wordListToRegex(configuration.BadWordsList)
+	regex, err := regexp.Compile(regexString)
+	if err != nil {
+		return err
+	}
 
-	p.badWordsRegex = regexp.MustCompile(regexString)
+	p.badWordsRegex = regex
 
 	return nil
 }
@@ -102,7 +106,7 @@ func wordListToRegex(wordList string) (regexStr string) {
 	sort.Slice(split, func(i, j int) bool { return len(split[i]) > len(split[j]) })
 
 	regexStr = fmt.Sprintf(
-		"(?mUi)(%s)",
+		"(?mi)(%s)",
 		strings.Join(split, "|"),
 	)
 
