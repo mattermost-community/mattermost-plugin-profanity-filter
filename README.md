@@ -27,6 +27,6 @@ You can edit the bad words list in **System Console > Plugins > Profanity Filter
 
 Choose to either censor the bad words with a character or reject the post with a custom warning message:
 
-![Post rejected by the plugin](./.github/post-rejected.gif)
+![Post rejected by the plugin](./images/post-rejected.gif)
 
-![Post censored by the plugin](./.github/post-censored.gif)
+![Post censored by the plugin](./images/post-censored.gif)
