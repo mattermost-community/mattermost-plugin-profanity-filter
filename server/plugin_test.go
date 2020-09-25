@@ -12,7 +12,7 @@ import (
 
 func TestMessageWillBePosted(t *testing.T) {
 	p := Plugin{
-		badWordsRegex: regexp.MustCompile("(?mUi)(def ghi|abc)"),
+		badWordsRegex: regexp.MustCompile("(?mi)(def ghi|abc)"),
 		configuration: &configuration{
 			CensorCharacter: "*",
 			RejectPosts:     false,

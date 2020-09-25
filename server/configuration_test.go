@@ -16,7 +16,7 @@ func TestWordListToRegex(t *testing.T) {
 	t.Run("Build Regex", func(t *testing.T) {
 		regexStr := wordListToRegex(p.getConfiguration().BadWordsList)
 
-		assert.Equal(t, regexStr, "(?mUi)(def ghi|abc)")
+		assert.Equal(t, regexStr, "(?mi)(def ghi|abc)")
 	})
 
 	p2 := Plugin{
@@ -28,6 +28,6 @@ func TestWordListToRegex(t *testing.T) {
 	t.Run("Build In double Regex", func(t *testing.T) {
 		regexStr := wordListToRegex(p2.getConfiguration().BadWordsList)
 
-		assert.Equal(t, regexStr, "(?mUi)(abc def|abc)")
+		assert.Equal(t, regexStr, "(?mi)(abc def|abc)")
 	})
 }
