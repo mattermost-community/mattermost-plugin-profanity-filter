@@ -106,7 +106,7 @@ func wordListToRegex(wordList string) (regexStr string) {
 	sort.Slice(split, func(i, j int) bool { return len(split[i]) > len(split[j]) })
 
 	regexStr = fmt.Sprintf(
-		"(?mi)(%s)",
+		`(?mi)\b(%s)\b`,
 		strings.Join(split, "|"),
 	)
 

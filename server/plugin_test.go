@@ -12,12 +12,13 @@ import (
 
 func TestMessageWillBePosted(t *testing.T) {
 	p := Plugin{
-		badWordsRegex: regexp.MustCompile("(?mi)(def ghi|abc)"),
 		configuration: &configuration{
 			CensorCharacter: "*",
 			RejectPosts:     false,
+			BadWordsList:    "def ghi,abc",
 		},
 	}
+	p.badWordsRegex = regexp.MustCompile(wordListToRegex(p.getConfiguration().BadWordsList))
 
 	t.Run("word matches", func(t *testing.T) {
 		in := &model.Post{
@@ -64,6 +65,19 @@ func TestMessageWillBePosted(t *testing.T) {
 		}
 		out := &model.Post{
 			Message: "123 ***, 456",
+		}
+
+		rpost, s := p.MessageWillBePosted(&plugin.Context{}, in)
+		assert.Empty(t, s)
+		assert.Equal(t, out, rpost)
+	})
+
+	t.Run("word shouldn't match because it in another word", func(t *testing.T) {
+		in := &model.Post{
+			Message: "helloabcworld helloabc abchello",
+		}
+		out := &model.Post{
+			Message: "helloabcworld helloabc abchello",
 		}
 
 		rpost, s := p.MessageWillBePosted(&plugin.Context{}, in)
