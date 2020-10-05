@@ -28,24 +28,25 @@ type Plugin struct {
 }
 
 func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
-	postWithoutAccents := removeAccents(post.Message)
+	postMessageWithoutAccents := removeAccents(post.Message)
 
-	if p.badWordsRegex.MatchString(postWithoutAccents) {
-		configuration := p.getConfiguration()
+	if !p.badWordsRegex.MatchString(postMessageWithoutAccents) {
+		return post, ""
+	}
 
-		detectedBadWords := p.badWordsRegex.FindAllString(postWithoutAccents, -1)
+	configuration := p.getConfiguration()
+	detectedBadWords := p.badWordsRegex.FindAllString(postMessageWithoutAccents, -1)
 
-		if configuration.RejectPosts {
-			return nil, "Profane word not allowed: `" + strings.Join(detectedBadWords, ", ") + "`"
-		}
+	if configuration.RejectPosts {
+		return nil, "Profane word not allowed: `" + strings.Join(detectedBadWords, ", ") + "`"
+	}
 
-		for _, word := range detectedBadWords {
-			post.Message = strings.ReplaceAll(
-				post.Message,
-				word,
-				strings.Repeat(p.getConfiguration().CensorCharacter, len(word)),
-			)
-		}
+	for _, word := range detectedBadWords {
+		post.Message = strings.ReplaceAll(
+			post.Message,
+			word,
+			strings.Repeat(p.getConfiguration().CensorCharacter, len(word)),
+		)
 	}
 
 	return post, ""
