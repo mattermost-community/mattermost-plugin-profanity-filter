@@ -25,3 +25,4 @@ This plugin allows you to censor profanity on your Mattermost server. The plugin
 ### Usage
 
 You can edit the bad words list in **System Console > Plugins > Profanity Filter > Bad Words list**.
+In this list, you can use Regular Expressions to match bad words. For example, `bad[[:space:]]?word` will match both `badword` and `bad word`.
