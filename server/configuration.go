@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
+	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -84,11 +87,29 @@ func (p *Plugin) OnConfigurationChange() error {
 
 	p.setConfiguration(configuration)
 
-	badWordsFromSettings := strings.Split(configuration.BadWordsList, " ")
-	p.badWords = make(map[string]bool, len(badWordsFromSettings))
-	for _, word := range badWordsFromSettings {
-		p.badWords[strings.ToLower(removeAccents(word))] = true
+	// Addind space around the words
+	regexString := wordListToRegex(configuration.BadWordsList)
+	regex, err := regexp.Compile(regexString)
+	if err != nil {
+		return err
 	}
 
+	p.badWordsRegex = regex
+
 	return nil
+}
+
+func wordListToRegex(wordList string) (regexStr string) {
+	split := strings.Split(wordList, ",")
+
+	// Sorting by length because if "bad" and "bad word" are in the list,
+	// we want "bad word" to be the first match
+	sort.Slice(split, func(i, j int) bool { return len(split[i]) > len(split[j]) })
+
+	regexStr = fmt.Sprintf(
+		`(?mi)\b(%s)\b`,
+		strings.Join(split, "|"),
+	)
+
+	return regexStr
 }
