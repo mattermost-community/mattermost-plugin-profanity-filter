@@ -22,7 +22,7 @@
         "key": "WarningMessage",
         "display_name": "Warning Message",
         "type": "text",
-        "help_text": "If Reject Posts is enabled, this message will be sent to the user to warn him. Use `%s` in the message if you want to cite the forbidden word. Markdown formatted.",
+        "help_text": "If Reject Posts is enabled, this message will be sent to the user to warn him. Place `%s` where you want to cite the forbidden word in the message. Markdown formatted.",
         "placeholder": "Ex. Your post has been rejected by the Profanity Filter, because the following word is not allowed: `%s`.",
         "default": "Your post has been rejected by the Profanity Filter, because the following word is not allowed: `%s`."
       },
