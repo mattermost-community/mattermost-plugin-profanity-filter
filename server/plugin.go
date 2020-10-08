@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"sync"
@@ -38,7 +39,13 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 	detectedBadWords := p.badWordsRegex.FindAllString(postMessageWithoutAccents, -1)
 
 	if configuration.RejectPosts {
-		return nil, "Profane word not allowed: `" + strings.Join(detectedBadWords, ", ") + "`"
+		p.API.SendEphemeralPost(post.UserId, &model.Post{
+			ChannelId: post.ChannelId,
+			Message:   fmt.Sprintf(configuration.WarningMessage, strings.Join(detectedBadWords, ", ")),
+			RootId:    post.RootId,
+		})
+
+		return nil, fmt.Sprintf("Profane word not allowed: %s", strings.Join(detectedBadWords, ", "))
 	}
 
 	for _, word := range detectedBadWords {

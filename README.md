@@ -5,12 +5,11 @@
 [![Release](https://img.shields.io/github/v/release/mattermost/mattermost-plugin-profanity-filter)](https://github.com/mattermost/mattermost-plugin-profanity-filter/releases/latest)
 [![HW](https://img.shields.io/github/issues/mattermost/mattermost-plugin-profanity-filter/Up%20For%20Grabs?color=dark%20green&label=Help%20Wanted)](https://github.com/mattermost/mattermost-plugin-profanity-filter/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22Up+For+Grabs%22+label%3A%22Help+Wanted%22)
 
-
-This plugin allows you to censor profanity on your Mattermost server. The plugin checks all messages for matches against the configured "Bad Words List" before they are posted to any channel. The characters in any word matches are replaced with a series of "*"s.
+This plugin allows you to censor profanity on your Mattermost server. The plugin checks all messages for matches against the configured "Bad words list" before they are posted to any channel. The characters in any word matches are replaced with a series of "\*"s.
 
 **Supported Mattermost Server Versions: 5.2+**
 
-## Plugin Marketplace 
+## Plugin Marketplace
 
 1. Go to **Main Menu > Plugin Marketplace** in Mattermost.
 2. Search for "Profanity Filter" or manually find the plugin from the list and click **Install**
@@ -24,5 +23,11 @@ This plugin allows you to censor profanity on your Mattermost server. The plugin
 
 ### Usage
 
-You can edit the bad words list in **System Console > Plugins > Profanity Filter > Bad Words list**.
+You can edit the bad words list in **System Console > Plugins > Profanity Filter > Bad words list**.
 In this list, you can use Regular Expressions to match bad words. For example, `bad[[:space:]]?word` will match both `badword` and `bad word`.
+
+Choose to either censor the bad words with a character or reject the post with a custom warning message:
+
+![Post rejected by the plugin](./images/post-rejected.gif)
+
+![Post censored by the plugin](./images/post-censored.gif)
