@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"unicode"
@@ -23,29 +25,37 @@ type Plugin struct {
 	// setConfiguration for usage.
 	configuration *configuration
 
-	badWords map[string]bool
-}
-
-func (p *Plugin) WordIsBad(word string) bool {
-	_, ok := p.badWords[strings.ToLower(removeAccents(word))]
-	return ok
+	badWordsRegex *regexp.Regexp
 }
 
 func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
-	configuration := p.getConfiguration()
+	postMessageWithoutAccents := removeAccents(post.Message)
 
-	message := post.Message
-	words := strings.Split(message, " ")
-	for i, word := range words {
-		if p.WordIsBad(word) {
-			if configuration.RejectPosts {
-				return nil, "Profane word not allowed: " + word
-			}
-			words[i] = strings.Repeat(configuration.CensorCharacter, len(word))
-		}
+	if !p.badWordsRegex.MatchString(postMessageWithoutAccents) {
+		return post, ""
 	}
 
-	post.Message = strings.Join(words, " ")
+	configuration := p.getConfiguration()
+	detectedBadWords := p.badWordsRegex.FindAllString(postMessageWithoutAccents, -1)
+
+	if configuration.RejectPosts {
+		p.API.SendEphemeralPost(post.UserId, &model.Post{
+			ChannelId: post.ChannelId,
+			Message:   fmt.Sprintf(configuration.WarningMessage, strings.Join(detectedBadWords, ", ")),
+			RootId:    post.RootId,
+		})
+
+		return nil, fmt.Sprintf("Profane word not allowed: %s", strings.Join(detectedBadWords, ", "))
+	}
+
+	for _, word := range detectedBadWords {
+		post.Message = strings.ReplaceAll(
+			post.Message,
+			word,
+			strings.Repeat(p.getConfiguration().CensorCharacter, len(word)),
+		)
+	}
+
 	return post, ""
 }
 
