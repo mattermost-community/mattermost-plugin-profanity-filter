@@ -29,13 +29,19 @@ type Plugin struct {
 }
 
 func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
+	configuration := p.getConfiguration()
+	_, fromBot := post.GetProps()["from_bot"]
+
+	if configuration.ExcludeBots && fromBot {
+		return post, ""
+	}
+
 	postMessageWithoutAccents := removeAccents(post.Message)
 
 	if !p.badWordsRegex.MatchString(postMessageWithoutAccents) {
 		return post, ""
 	}
 
-	configuration := p.getConfiguration()
 	detectedBadWords := p.badWordsRegex.FindAllString(postMessageWithoutAccents, -1)
 
 	if configuration.RejectPosts {
