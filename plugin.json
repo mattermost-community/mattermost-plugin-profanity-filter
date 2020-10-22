@@ -17,6 +17,12 @@
   "settings_schema": {
     "settings": [
       {
+        "key": "ExcludeBots",
+        "display_name": "Exclude Bots",
+        "type": "bool",
+        "help_text": "If set the plugin will exclude bot messages from being checked."
+      },
+      {
         "key": "RejectPosts",
         "display_name": "Reject Posts",
         "type": "bool",

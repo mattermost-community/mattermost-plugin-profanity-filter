@@ -16,6 +16,7 @@ func TestMessageWillBePosted(t *testing.T) {
 			CensorCharacter: "*",
 			RejectPosts:     false,
 			BadWordsList:    "def ghi,abc",
+			ExcludeBots:     true,
 		},
 	}
 	p.badWordsRegex = regexp.MustCompile(wordListToRegex(p.getConfiguration().BadWordsList))
@@ -79,6 +80,21 @@ func TestMessageWillBePosted(t *testing.T) {
 		out := &model.Post{
 			Message: "helloabcworld helloabc abchello",
 		}
+
+		rpost, s := p.MessageWillBePosted(&plugin.Context{}, in)
+		assert.Empty(t, s)
+		assert.Equal(t, out, rpost)
+	})
+
+	t.Run("bot messages shouldn't be blocked", func(t *testing.T) {
+		in := &model.Post{
+			Message: "abc",
+		}
+		in.AddProp("from_bot", "true")
+		out := &model.Post{
+			Message: "abc",
+		}
+		out.AddProp("from_bot", "true")
 
 		rpost, s := p.MessageWillBePosted(&plugin.Context{}, in)
 		assert.Empty(t, s)
