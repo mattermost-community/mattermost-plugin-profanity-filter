@@ -13,19 +13,13 @@ This plugin allows you to censor profanity on your Mattermost server. The plugin
 
 **Supported Mattermost Server Versions: 5.2+**
 
-## Plugin Marketplace
-
-1. Go to **Main Menu > Plugin Marketplace** in Mattermost.
-2. Search for "Profanity Filter" or manually find the plugin from the list and click **Install**
-3. Once the plugin has downloaded and been installed, click **Configure**.
-
-## Manual Installation
+## Installation
 
 1. Go to the [releases page of this Github repository](https://github.com/mattermost/mattermost-plugin-profanity-filter/releases) and download the latest release for your Mattermost server.
 2. Upload this file in the Mattermost System Console under **System Console > Plugins > Management** to install the plugin. To learn more about how to upload a plugin, [see the documentation](https://docs.mattermost.com/administration/plugins.html#plugin-uploads).
 3. Activate the plugin at **System Console > Plugins > Management**.
 
-### Usage
+## Usage
 
 You can edit the bad words list in **System Console > Plugins > Profanity Filter > Bad words list**.
 In this list, you can use Regular Expressions to match bad words. For example, `bad[[:space:]]?word` will match both `badword` and `bad word`.
