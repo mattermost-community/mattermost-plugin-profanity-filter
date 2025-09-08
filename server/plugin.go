@@ -25,7 +25,8 @@ type Plugin struct {
 	// setConfiguration for usage.
 	configuration *configuration
 
-	badWordsRegex *regexp.Regexp
+	badWordsRegex      *regexp.Regexp
+	japaneseNormalizer *JapaneseTextNormalizer
 }
 
 func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
@@ -36,13 +37,38 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 		return post, ""
 	}
 
-	postMessageWithoutAccents := removeAccents(post.Message)
+	// Get text variations for matching
+	textVariations := []string{post.Message}
 
-	if !p.badWordsRegex.MatchString(postMessageWithoutAccents) {
-		return post, ""
+	// Add Japanese text normalization if enabled
+	if configuration.EnableJapaneseSupport && p.japaneseNormalizer != nil {
+		japaneseVariations := p.japaneseNormalizer.NormalizeJapaneseText(post.Message)
+		textVariations = append(textVariations, japaneseVariations...)
 	}
 
-	detectedBadWords := p.badWordsRegex.FindAllString(postMessageWithoutAccents, -1)
+	// Also add accent-removed version for backward compatibility
+	postMessageWithoutAccents := removeAccents(post.Message)
+	textVariations = append(textVariations, postMessageWithoutAccents)
+
+	// Check all text variations against regex
+	var detectedBadWords []string
+	detectedWordsMap := make(map[string]bool)
+
+	for _, textVariation := range textVariations {
+		if p.badWordsRegex.MatchString(textVariation) {
+			matches := p.badWordsRegex.FindAllString(textVariation, -1)
+			for _, match := range matches {
+				if !detectedWordsMap[match] {
+					detectedWordsMap[match] = true
+					detectedBadWords = append(detectedBadWords, match)
+				}
+			}
+		}
+	}
+
+	if len(detectedBadWords) == 0 {
+		return post, ""
+	}
 
 	if configuration.RejectPosts {
 		p.API.SendEphemeralPost(post.UserId, &model.Post{
@@ -54,15 +80,49 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 		return nil, fmt.Sprintf("Profane word not allowed: %s", strings.Join(detectedBadWords, ", "))
 	}
 
+	// Censor detected words in the original message
 	for _, word := range detectedBadWords {
-		post.Message = strings.ReplaceAll(
-			post.Message,
-			word,
-			strings.Repeat(p.getConfiguration().CensorCharacter, len(word)),
-		)
+		// Try to replace in original message and its variations
+		for _, variation := range textVariations {
+			if strings.Contains(variation, word) {
+				// Find the word in the original message and replace it
+				post.Message = p.replaceWordInText(post.Message, word, strings.Repeat(configuration.CensorCharacter, len(word)))
+				break
+			}
+		}
 	}
 
 	return post, ""
+}
+
+// replaceWordInText intelligently replaces profane words considering Japanese text boundaries
+func (p *Plugin) replaceWordInText(text, badWord, replacement string) string {
+	configuration := p.getConfiguration()
+
+	// Simple replacement for non-Japanese mode or if Japanese support is disabled
+	if !configuration.EnableJapaneseSupport || p.japaneseNormalizer == nil {
+		return strings.ReplaceAll(text, badWord, replacement)
+	}
+
+	// For Japanese text, we need to be more careful about word boundaries
+	// Since Japanese doesn't use spaces, we'll do a direct replacement
+	// but consider different script variations
+
+	if p.japaneseNormalizer.ContainsJapanese(text) || p.japaneseNormalizer.ContainsJapanese(badWord) {
+		// Generate all variations of the bad word for comprehensive replacement
+		variations := p.japaneseNormalizer.GenerateMatchingVariations(badWord)
+
+		result := text
+		for _, variation := range variations {
+			if strings.Contains(result, variation) {
+				result = strings.ReplaceAll(result, variation, replacement)
+			}
+		}
+		return result
+	}
+
+	// Fallback to simple replacement
+	return strings.ReplaceAll(text, badWord, replacement)
 }
 
 func (p *Plugin) MessageWillBePosted(_ *plugin.Context, post *model.Post) (*model.Post, string) {

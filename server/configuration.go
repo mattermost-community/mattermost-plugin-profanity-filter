@@ -22,11 +22,13 @@ import (
 // If you add non-reference types to your configuration struct, be sure to rewrite Clone as a deep
 // copy appropriate for your types.
 type configuration struct {
-	ExcludeBots     bool
-	RejectPosts     bool
-	CensorCharacter string
-	BadWordsList    string
-	WarningMessage  string `json:"WarningMessage"`
+	ExcludeBots               bool
+	RejectPosts               bool
+	CensorCharacter           string
+	BadWordsList              string
+	WarningMessage            string `json:"WarningMessage"`
+	EnableJapaneseSupport     bool
+	JapaneseNormalizationMode string
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
@@ -96,6 +98,13 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 
 	p.badWordsRegex = regex
+
+	// Initialize Japanese normalizer if Japanese support is enabled
+	if configuration.EnableJapaneseSupport {
+		if p.japaneseNormalizer == nil {
+			p.japaneseNormalizer = NewJapaneseTextNormalizer()
+		}
+	}
 
 	return nil
 }
