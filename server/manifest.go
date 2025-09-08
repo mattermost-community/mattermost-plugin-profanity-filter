@@ -9,3 +9,8 @@ var manifest = struct {
 	ID:      "mattermost-profanity-filter",
 	Version: "1.0.0",
 }
+
+// Manifest returns the plugin manifest information
+func Manifest() (string, string) {
+	return manifest.ID, manifest.Version
+}

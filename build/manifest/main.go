@@ -1,9 +1,9 @@
+// Package main provides utilities for managing plugin manifests.
 package main
 
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -20,6 +20,11 @@ var manifest = struct {
 }{
 	ID:      "%s",
 	Version: "%s",
+}
+
+// Manifest returns the plugin manifest information
+func Manifest() (string, string) {
+	return manifest.ID, manifest.Version
 }
 `
 
@@ -76,7 +81,7 @@ func findManifest() (*model.Manifest, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open %s", manifestFilePath)
 	}
-	defer manifestFile.Close()
+	defer func() { _ = manifestFile.Close() }()
 
 	// Re-decode the manifest, disallowing unknown fields. When we write the manifest back out,
 	// we don't want to accidentally clobber anything we won't preserve.
@@ -103,7 +108,7 @@ func dumpPluginVersion(manifest *model.Manifest) {
 // applyManifest propagates the plugin_id into the server and webapp folders, as necessary
 func applyManifest(manifest *model.Manifest) error {
 	if manifest.HasServer() {
-		if err := ioutil.WriteFile(
+		if err := os.WriteFile(
 			"server/manifest.go",
 			[]byte(fmt.Sprintf(pluginIDGoFileTemplate, manifest.Id, manifest.Version)),
 			0600,
@@ -113,7 +118,7 @@ func applyManifest(manifest *model.Manifest) error {
 	}
 
 	if manifest.HasWebapp() {
-		if err := ioutil.WriteFile(
+		if err := os.WriteFile(
 			"webapp/src/manifest.js",
 			[]byte(fmt.Sprintf(pluginIDJSFileTemplate, manifest.Id, manifest.Version)),
 			0600,

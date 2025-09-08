@@ -1,43 +1,47 @@
+version: "2"
+
 run:
   timeout: 5m
   modules-download-mode: readonly
 
-linters-settings:
-  gofmt:
-    simplify: true
-  goimports:
-    local-prefixes: github.com/mattermost/mattermost-plugin-profanity-filter
-  govet:
-    check-shadowing: true
-    enable-all: true
-    disable:
-      - fieldalignment
-  misspell:
-    locale: US
-
 linters:
-  disable-all: true
+  default: none
   enable:
-    - bodyclose
+    - bidichk
     - errcheck
-    - gocritic
-    - gofmt
-    - goimports
-    - gosec
-    - gosimple
     - govet
     - ineffassign
+    - makezero
     - misspell
-    - nakedret
     - revive
     - staticcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unused
     - whitespace
+  settings:
+    govet:
+      disable:
+        - fieldalignment
+      enable-all: true
+    misspell:
+      locale: US
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+      rewrite-rules:
+        - pattern: interface{}
+          replacement: any
+    goimports:
+      local-prefixes: github.com/mattermost/mattermost-plugin-profanity-filter
 
 issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
   exclude-rules:
     - path: server/configuration.go
       linters:
@@ -45,4 +49,3 @@ issues:
     - path: _test\.go
       linters:
         - bodyclose
-        - scopelint # https://github.com/kyoh86/scopelint/issues/4

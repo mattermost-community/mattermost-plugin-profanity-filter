@@ -42,13 +42,9 @@ endif
 ## Run golangci-lint on codebase.
 .PHONY: golangci-lint
 golangci-lint:
-	@if ! [ -x "$$(command -v golangci-lint)" ]; then \
-		echo "golangci-lint is not installed. Please see https://github.com/golangci/golangci-lint#install for installation instructions."; \
-		exit 1; \
-	fi; \
-
+	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6
 	@echo Running golangci-lint
-	golangci-lint run ./...
+	$(GOPATH)/bin/golangci-lint run ./...
 
 ## Builds the server, if it exists, including support for multiple architectures.
 .PHONY: server

@@ -15,6 +15,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin"
 )
 
+// Plugin represents the profanity filter plugin instance.
 type Plugin struct {
 	plugin.MattermostPlugin
 
@@ -29,11 +30,12 @@ type Plugin struct {
 	japaneseNormalizer *JapaneseTextNormalizer
 }
 
+// FilterPost processes a post to filter profanity based on configured settings.
 func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
-	configuration := p.getConfiguration()
+	config := p.getConfiguration()
 	_, fromBot := post.GetProps()["from_bot"]
 
-	if configuration.ExcludeBots && fromBot {
+	if config.ExcludeBots && fromBot {
 		return post, ""
 	}
 
@@ -41,7 +43,7 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 	textVariations := []string{post.Message}
 
 	// Add Japanese text normalization if enabled
-	if configuration.EnableJapaneseSupport && p.japaneseNormalizer != nil {
+	if config.EnableJapaneseSupport && p.japaneseNormalizer != nil {
 		japaneseVariations := p.japaneseNormalizer.NormalizeJapaneseText(post.Message)
 		textVariations = append(textVariations, japaneseVariations...)
 	}
@@ -70,10 +72,10 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 		return post, ""
 	}
 
-	if configuration.RejectPosts {
+	if config.RejectPosts {
 		p.API.SendEphemeralPost(post.UserId, &model.Post{
 			ChannelId: post.ChannelId,
-			Message:   fmt.Sprintf(configuration.WarningMessage, strings.Join(detectedBadWords, ", ")),
+			Message:   fmt.Sprintf(config.WarningMessage, strings.Join(detectedBadWords, ", ")),
 			RootId:    post.RootId,
 		})
 
@@ -86,7 +88,7 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 		for _, variation := range textVariations {
 			if strings.Contains(variation, word) {
 				// Find the word in the original message and replace it
-				post.Message = p.replaceWordInText(post.Message, word, strings.Repeat(configuration.CensorCharacter, len(word)))
+				post.Message = p.replaceWordInText(post.Message, word, strings.Repeat(config.CensorCharacter, len(word)))
 				break
 			}
 		}
@@ -97,10 +99,10 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 
 // replaceWordInText intelligently replaces profane words considering Japanese text boundaries
 func (p *Plugin) replaceWordInText(text, badWord, replacement string) string {
-	configuration := p.getConfiguration()
+	config := p.getConfiguration()
 
 	// Simple replacement for non-Japanese mode or if Japanese support is disabled
-	if !configuration.EnableJapaneseSupport || p.japaneseNormalizer == nil {
+	if !config.EnableJapaneseSupport || p.japaneseNormalizer == nil {
 		return strings.ReplaceAll(text, badWord, replacement)
 	}
 
@@ -125,10 +127,12 @@ func (p *Plugin) replaceWordInText(text, badWord, replacement string) string {
 	return strings.ReplaceAll(text, badWord, replacement)
 }
 
+// MessageWillBePosted is called when a message is about to be posted.
 func (p *Plugin) MessageWillBePosted(_ *plugin.Context, post *model.Post) (*model.Post, string) {
 	return p.FilterPost(post)
 }
 
+// MessageWillBeUpdated is called when a message is about to be updated.
 func (p *Plugin) MessageWillBeUpdated(_ *plugin.Context, newPost *model.Post, _ *model.Post) (*model.Post, string) {
 	return p.FilterPost(newPost)
 }

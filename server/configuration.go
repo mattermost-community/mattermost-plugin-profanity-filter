@@ -1,3 +1,4 @@
+// Package main implements the Mattermost profanity filter plugin.
 package main
 
 import (

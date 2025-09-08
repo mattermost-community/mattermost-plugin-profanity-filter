@@ -80,7 +80,7 @@ func uploadPlugin(client *model.Client4, pluginID, bundlePath string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to open %s", bundlePath)
 	}
-	defer pluginBundle.Close()
+	defer func() { _ = pluginBundle.Close() }()
 
 	log.Print("Uploading plugin via API.")
 	_, resp := client.UploadPluginForced(pluginBundle)
