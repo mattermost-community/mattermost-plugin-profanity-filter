@@ -5,7 +5,7 @@ run:
   modules-download-mode: readonly
 
 linters:
-  default: none
+  disable-all: true
   enable:
     - bidichk
     - errcheck
@@ -18,13 +18,14 @@ linters:
     - unconvert
     - unused
     - whitespace
-  settings:
-    govet:
-      disable:
-        - fieldalignment
-      enable-all: true
-    misspell:
-      locale: US
+
+linters-settings:
+  govet:
+    disable:
+      - fieldalignment
+    enable-all: true
+  misspell:
+    locale: US
 
 formatters:
   enable:
