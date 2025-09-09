@@ -1,6 +1,6 @@
 module github.com/mattermost/mattermost-plugin-profanity-filter
 
-go 1.23
+go 1.21.13
 
 require (
 	github.com/gojp/kana v0.1.0
