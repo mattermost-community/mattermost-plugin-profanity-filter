@@ -158,9 +158,9 @@ func (j *JapaneseTextNormalizer) ToHalfWidth(text string) string {
 		case r >= 0xFF01 && r <= 0xFF5E:
 			result.WriteRune(r - 0xFEE0)
 		case r == 0xFF5F:
-			result.WriteRune(0x2985) // ⦅
+			result.WriteRune('(') // (
 		case r == 0xFF60:
-			result.WriteRune(0x2986) // ⦆
+			result.WriteRune(')') // )
 		default:
 			result.WriteRune(r)
 		}

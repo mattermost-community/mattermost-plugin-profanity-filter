@@ -135,6 +135,7 @@ func TestJapaneseTextNormalizer(t *testing.T) {
 		}{
 			{"ＴＥＳＴ", "TEST"},
 			{"１２３", "123"},
+			{"｟｠", "()"}, // Full-width parentheses to half-width
 			{"test", "test"},
 			{"", ""},
 		}
