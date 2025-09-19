@@ -3,12 +3,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 )
@@ -52,9 +53,9 @@ func deploy() error {
 		if adminUsername != "" && adminPassword != "" {
 			client := model.NewAPIv4Client(siteURL)
 			log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
-			_, resp := client.Login(adminUsername, adminPassword)
-			if resp.Error != nil {
-				return errors.Wrapf(resp.Error, "failed to login as %s", adminUsername)
+			_, _, resp := client.Login(context.Background(), adminUsername, adminPassword)
+			if resp.Error() != "" {
+				return errors.Errorf("failed to login as %s: %s", adminUsername, resp.Error())
 			}
 
 			return uploadPlugin(client, pluginID, bundlePath)
@@ -83,15 +84,15 @@ func uploadPlugin(client *model.Client4, pluginID, bundlePath string) error {
 	defer pluginBundle.Close()
 
 	log.Print("Uploading plugin via API.")
-	_, resp := client.UploadPluginForced(pluginBundle)
-	if resp.Error != nil {
-		return errors.Wrap(resp.Error, "failed to upload plugin bundle")
+	_, _, resp := client.UploadPluginForced(context.Background(), pluginBundle)
+	if resp.Error() != "" {
+		return errors.Errorf("failed to upload plugin bundle: %s", resp.Error())
 	}
 
 	log.Print("Enabling plugin.")
-	_, resp = client.EnablePlugin(pluginID)
-	if resp.Error != nil {
-		return errors.Wrap(resp.Error, "Failed to enable plugin")
+	_, resp = client.EnablePlugin(context.Background(), pluginID)
+	if resp.Error() != "" {
+		return errors.Errorf("Failed to enable plugin: %s", resp.Error())
 	}
 
 	return nil
