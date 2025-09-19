@@ -36,7 +36,7 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 		return post, ""
 	}
 
-	// Use new hybrid detection system
+	// Use hybrid detection system that separates ASCII and non-ASCII word detection for better multilingual support
 	detectedBadWords := p.detectAllProfanityWords(post.Message, configuration.BadWordsList)
 
 	if len(detectedBadWords) == 0 {
