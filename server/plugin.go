@@ -153,7 +153,9 @@ func (p *Plugin) detectASCIIWords(text string, asciiWords []string) []string {
 // detectRuneWords uses substring matching for rune words (Japanese, Russian, etc.)
 func (p *Plugin) detectRuneWords(text string, runeWords []string) []string {
 	var detected []string
-	// Don't apply removeAccents to rune words as it can corrupt non-Latin scripts
+	// Don't apply removeAccents to rune words as it can corrupt non-Latin scripts.
+	// Specifically, languages like Japanese, Chinese, Korean, Russian, and Arabic use different character encodings,
+	// and applying removeAccents (which is designed for Latin scripts) may corrupt or alter their characters.
 	textLower := strings.ToLower(text)
 
 	for _, word := range runeWords {
