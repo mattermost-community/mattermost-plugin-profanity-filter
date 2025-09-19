@@ -159,8 +159,7 @@ func (p *Plugin) detectRuneWords(text string, runeWords []string) []string {
 	textLower := strings.ToLower(text)
 
 	for _, word := range runeWords {
-		wordLower := strings.ToLower(strings.TrimSpace(word))
-		if wordLower != "" && strings.Contains(textLower, wordLower) {
+		if word != "" && strings.Contains(textLower, word) {
 			detected = append(detected, strings.TrimSpace(word))
 		}
 	}
