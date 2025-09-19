@@ -14,7 +14,7 @@ export GO111MODULE=on
 
 # We need to export GOBIN to allow it to be set
 # for processes spawned from the Makefile
-export GOBIN ?= $(PWD)/build/bin
+export GOBIN ?= $(PWD)/bin
 
 # You can include assets this directory into the bundle. This can be e.g. used to include profile pictures.
 ASSETS_DIR ?= assets
