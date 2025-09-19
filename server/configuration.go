@@ -103,13 +103,20 @@ func (p *Plugin) OnConfigurationChange() error {
 func wordListToRegex(wordList string) (regexStr string) {
 	split := strings.Split(wordList, ",")
 
+	// Only process ASCII words for regex (rune words are handled separately and ignored in the regex)
+	asciiWords, _ := separateWordsByType(split)
+
+	if len(asciiWords) == 0 {
+		return `(?mi)$^` // Never matches (no ASCII words)
+	}
+
 	// Sorting by length because if "bad" and "bad word" are in the list,
 	// we want "bad word" to be the first match
-	sort.Slice(split, func(i, j int) bool { return len(split[i]) > len(split[j]) })
+	sort.Slice(asciiWords, func(i, j int) bool { return len(asciiWords[i]) > len(asciiWords[j]) })
 
 	regexStr = fmt.Sprintf(
 		`(?mi)\b(%s)\b`,
-		strings.Join(split, "|"),
+		strings.Join(asciiWords, "|"),
 	)
 
 	return regexStr
