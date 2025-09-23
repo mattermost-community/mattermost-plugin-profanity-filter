@@ -103,8 +103,8 @@ func (p *Plugin) OnConfigurationChange() error {
 func wordListToRegex(wordList string) (regexStr string) {
 	split := strings.Split(wordList, ",")
 
-	// Only process ASCII words for regex (rune words are handled separately and ignored in the regex)
-	asciiWords, _ := separateWordsByType(split)
+	// Only process ASCII words for regex (Japanese words are handled separately and ignored in the regex)
+	asciiWords, _ := separateASCIIAndJapanese(split)
 
 	if len(asciiWords) == 0 {
 		return `(?mi)$^` // Never matches (no ASCII words)

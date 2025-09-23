@@ -5,11 +5,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"unicode"
-
-	"golang.org/x/text/runes"
-	"golang.org/x/text/transform"
-	"golang.org/x/text/unicode/norm"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
@@ -73,51 +68,15 @@ func (p *Plugin) MessageWillBeUpdated(_ *plugin.Context, newPost *model.Post, _ 
 	return p.FilterPost(newPost)
 }
 
-func removeAccents(s string) string {
-	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
-	output, _, e := transform.String(t, s)
-	if e != nil {
-		return s
-	}
-
-	return output
-}
-
-// requiresRuneProcessing checks if text contains non-ASCII characters that need rune-based processing
-func requiresRuneProcessing(text string) bool {
-	for _, r := range text {
-		if r > 127 { // Non-ASCII character
-			return true
-		}
-	}
-	return false
-}
-
 // runeLength returns the number of visual characters (runes) in a string
 func runeLength(s string) int {
 	return len([]rune(s))
 }
 
-// separateWordsByType separates a word list into ASCII words and rune words
-func separateWordsByType(wordList []string) (asciiWords, runeWords []string) {
-	for _, word := range wordList {
-		word = strings.TrimSpace(word)
-		if word == "" {
-			continue
-		}
-		if requiresRuneProcessing(word) {
-			runeWords = append(runeWords, word)
-		} else {
-			asciiWords = append(asciiWords, word)
-		}
-	}
-	return asciiWords, runeWords
-}
-
-// detectAllProfanityWords uses hybrid detection for both ASCII and rune words
+// detectAllProfanityWords uses detection for ASCII and Japanese words
 func (p *Plugin) detectAllProfanityWords(text, wordList string) []string {
 	words := strings.Split(wordList, ",")
-	asciiWords, runeWords := separateWordsByType(words)
+	asciiWords, japaneseWords := separateASCIIAndJapanese(words)
 
 	var detected []string
 
@@ -126,42 +85,9 @@ func (p *Plugin) detectAllProfanityWords(text, wordList string) []string {
 		detected = append(detected, p.detectASCIIWords(text, asciiWords)...)
 	}
 
-	// Rune words: Use substring matching (universal support)
-	if len(runeWords) > 0 {
-		detected = append(detected, p.detectRuneWords(text, runeWords)...)
-	}
-
-	return detected
-}
-
-// detectASCIIWords uses regex with word boundaries for ASCII words
-func (p *Plugin) detectASCIIWords(text string, asciiWords []string) []string {
-	if len(asciiWords) == 0 {
-		return []string{}
-	}
-
-	// Use existing regex logic with \b boundaries
-	regexStr := fmt.Sprintf(`(?mi)\b(%s)\b`, strings.Join(asciiWords, "|"))
-	regex, err := regexp.Compile(regexStr)
-	if err != nil {
-		return []string{}
-	}
-
-	return regex.FindAllString(removeAccents(text), -1)
-}
-
-// detectRuneWords uses substring matching for rune words (Japanese, Russian, etc.)
-func (p *Plugin) detectRuneWords(text string, runeWords []string) []string {
-	var detected []string
-	// Don't apply removeAccents to rune words as it can corrupt non-Latin scripts.
-	// Specifically, languages like Japanese, Chinese, Korean, Russian, and Arabic use different character encodings,
-	// and applying removeAccents (which is designed for Latin scripts) may corrupt or alter their characters.
-	textLower := strings.ToLower(text)
-
-	for _, word := range runeWords {
-		if word != "" && strings.Contains(textLower, word) {
-			detected = append(detected, strings.TrimSpace(word))
-		}
+	// Japanese words: Use tokenization + regex approach
+	if len(japaneseWords) > 0 {
+		detected = append(detected, p.detectJapaneseWordsWithTokenization(text, japaneseWords)...)
 	}
 
 	return detected

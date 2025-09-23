@@ -3,6 +3,8 @@ module github.com/mattermost/mattermost-plugin-profanity-filter
 go 1.24.5
 
 require (
+	github.com/ikawaha/kagome-dict/ipa v1.2.5
+	github.com/ikawaha/kagome/v2 v2.10.2
 	github.com/mattermost/mattermost/server/public v0.1.6
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
@@ -26,6 +28,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-plugin v1.6.1 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
+	github.com/ikawaha/kagome-dict v1.1.6 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattermost/go-i18n v1.11.1-0.20211013152124-5c415071e404 // indirect
 	github.com/mattermost/ldap v0.0.0-20231116144001-0f480c025956 // indirect

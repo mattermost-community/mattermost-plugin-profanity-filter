@@ -10,23 +10,23 @@ import (
 	"github.com/mattermost/mattermost/server/public/plugin"
 )
 
-func TestArabicProfanityFilter(t *testing.T) {
+func TestJapaneseProfanityFilter(t *testing.T) {
 	p := Plugin{
 		configuration: &configuration{
 			CensorCharacter: "*",
 			RejectPosts:     false,
-			BadWordsList:    "أحمق,غبي,حمار,جاهل",
+			BadWordsList:    "ばか,バカ,馬鹿,クソ野郎,MySQL",
 			ExcludeBots:     false,
 		},
 	}
 	p.badWordsRegex = regexp.MustCompile(wordListToRegex(p.getConfiguration().BadWordsList))
 
-	t.Run("arabic profanity word matches", func(t *testing.T) {
+	t.Run("hiragana profanity word matches", func(t *testing.T) {
 		in := &model.Post{
-			Message: "أنت أحمق!",
+			Message: "あなたはばかです。",
 		}
 		expected := &model.Post{
-			Message: "أنت ****!",
+			Message: "あなたは**です。",
 		}
 
 		rpost, s := p.MessageWillBePosted(&plugin.Context{}, in)
@@ -36,15 +36,15 @@ func TestArabicProfanityFilter(t *testing.T) {
 		t.Logf("Output: %s", rpost.Message)
 		t.Logf("Expected: %s", expected.Message)
 
-		assert.Equal(t, expected.Message, rpost.Message, "Arabic profanity word 'أحمق' should be replaced with '****'")
+		assert.Equal(t, expected.Message, rpost.Message, "Hiragana profanity word 'ばか' should be replaced with '**'")
 	})
 
-	t.Run("arabic second word profanity matches", func(t *testing.T) {
+	t.Run("katakana profanity word matches", func(t *testing.T) {
 		in := &model.Post{
-			Message: "هذا غبي جداً.",
+			Message: "あなたはバカです。",
 		}
 		expected := &model.Post{
-			Message: "هذا *** جداً.",
+			Message: "あなたは**です。",
 		}
 
 		rpost, s := p.MessageWillBePosted(&plugin.Context{}, in)
@@ -54,15 +54,15 @@ func TestArabicProfanityFilter(t *testing.T) {
 		t.Logf("Output: %s", rpost.Message)
 		t.Logf("Expected: %s", expected.Message)
 
-		assert.Equal(t, expected.Message, rpost.Message, "Arabic profanity word 'غبي' should be replaced with '***'")
+		assert.Equal(t, expected.Message, rpost.Message, "Katakana profanity word 'バカ' should be replaced with '**'")
 	})
 
-	t.Run("arabic words with english mixed content", func(t *testing.T) {
+	t.Run("kanji profanity word matches", func(t *testing.T) {
 		in := &model.Post{
-			Message: "Hello أحمق world and goodbye غبي person",
+			Message: "あなたは馬鹿です。",
 		}
 		expected := &model.Post{
-			Message: "Hello **** world and goodbye *** person",
+			Message: "あなたは**です。",
 		}
 
 		rpost, s := p.MessageWillBePosted(&plugin.Context{}, in)
@@ -72,15 +72,15 @@ func TestArabicProfanityFilter(t *testing.T) {
 		t.Logf("Output: %s", rpost.Message)
 		t.Logf("Expected: %s", expected.Message)
 
-		assert.Equal(t, expected.Message, rpost.Message, "Arabic words 'أحمق' and 'غبي' in mixed content should be replaced correctly")
+		assert.Equal(t, expected.Message, rpost.Message, "Kanji profanity word '馬鹿' should be replaced with '**'")
 	})
 
-	t.Run("arabic rtl text profanity matches", func(t *testing.T) {
+	t.Run("mixed script profanity word matches", func(t *testing.T) {
 		in := &model.Post{
-			Message: "لا تكن حمار في هذا الموضوع.",
+			Message: "このクソ野郎が！",
 		}
 		expected := &model.Post{
-			Message: "لا تكن **** في هذا الموضوع.",
+			Message: "この****が！",
 		}
 
 		rpost, s := p.MessageWillBePosted(&plugin.Context{}, in)
@@ -90,7 +90,25 @@ func TestArabicProfanityFilter(t *testing.T) {
 		t.Logf("Output: %s", rpost.Message)
 		t.Logf("Expected: %s", expected.Message)
 
-		assert.Equal(t, expected.Message, rpost.Message, "Arabic profanity word 'حمار' should be replaced with '****' in RTL text")
+		assert.Equal(t, expected.Message, rpost.Message, "Mixed script profanity word 'クソ野郎' should be replaced with '****'")
+	})
+
+	t.Run("japanese words with english mixed content", func(t *testing.T) {
+		in := &model.Post{
+			Message: "Hello ばか world and goodbye バカ person",
+		}
+		expected := &model.Post{
+			Message: "Hello ** world and goodbye ** person",
+		}
+
+		rpost, s := p.MessageWillBePosted(&plugin.Context{}, in)
+		assert.Empty(t, s)
+
+		t.Logf("Input: %s", in.Message)
+		t.Logf("Output: %s", rpost.Message)
+		t.Logf("Expected: %s", expected.Message)
+
+		assert.Equal(t, expected.Message, rpost.Message, "Japanese words 'ばか' and 'バカ' in mixed content should be replaced with '**'")
 	})
 
 	t.Run("utf-8 character length handling", func(t *testing.T) {
@@ -101,10 +119,10 @@ func TestArabicProfanityFilter(t *testing.T) {
 			word           string
 			expectedOutput string
 		}{
-			{"arabic 4 chars fool", "أحمق", "أحمق", "****"},
-			{"arabic 3 chars stupid", "غبي", "غبي", "***"},
-			{"arabic 4 chars donkey", "حمار", "حمار", "****"},
-			{"arabic 4 chars ignorant", "جاهل", "جاهل", "****"},
+			{"hiragana 2 chars", "ばか", "ばか", "**"},
+			{"katakana 2 chars", "バカ", "バカ", "**"},
+			{"kanji 2 chars", "馬鹿", "馬鹿", "**"},
+			{"mixed 4 chars", "クソ野郎", "クソ野郎", "****"},
 		}
 
 		for _, tc := range testCases {
@@ -130,5 +148,13 @@ func TestArabicProfanityFilter(t *testing.T) {
 					tc.word, runeCount, byteCount)
 			})
 		}
+	})
+
+	t.Run("replaces Japanese and English in the same sentence", func(t *testing.T) {
+		in := "MySQLを使ってPostgresの代わりにするのはバカです。"
+		rpost, s := p.MessageWillBePosted(&plugin.Context{}, &model.Post{Message: in})
+		assert.Empty(t, s)
+		expected := "*****を使ってPostgresの代わりにするのは**です。"
+		assert.Equal(t, expected, rpost.Message, "Japanese word 'ばか' and English word 'MySQL' should be replaced with asterisks")
 	})
 }
