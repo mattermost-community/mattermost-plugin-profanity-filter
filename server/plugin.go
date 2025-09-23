@@ -75,7 +75,7 @@ func runeLength(s string) int {
 
 // detectAllProfanityWords uses detection for ASCII and Japanese words
 func (p *Plugin) detectAllProfanityWords(text, wordList string) []string {
-	words := strings.Split(wordList, ",")
+	words := splitWordList(wordList)
 	asciiWords, japaneseWords := separateASCIIAndJapanese(words)
 
 	var detected []string

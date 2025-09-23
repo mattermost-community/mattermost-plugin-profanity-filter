@@ -86,6 +86,9 @@ func (p *Plugin) OnConfigurationChange() error {
 		return errors.Wrap(err, "failed to load plugin configuration")
 	}
 
+	// Normalize Japanese commas to ASCII commas in BadWordsList for consistent processing
+	configuration.BadWordsList = normalizeWordListCommas(configuration.BadWordsList)
+
 	p.setConfiguration(configuration)
 
 	// Addind space around the words
@@ -101,7 +104,7 @@ func (p *Plugin) OnConfigurationChange() error {
 }
 
 func wordListToRegex(wordList string) (regexStr string) {
-	split := strings.Split(wordList, ",")
+	split := splitWordList(wordList)
 
 	// Only process ASCII words for regex (Japanese words are handled separately and ignored in the regex)
 	asciiWords, _ := separateASCIIAndJapanese(split)
