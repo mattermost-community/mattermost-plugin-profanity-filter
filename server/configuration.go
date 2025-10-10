@@ -91,7 +91,7 @@ func (p *Plugin) OnConfigurationChange() error {
 
 	p.setConfiguration(configuration)
 
-	// Addind space around the words
+	// Adding space around the words
 	regexString := wordListToRegex(configuration.BadWordsList)
 	regex, err := regexp.Compile(regexString)
 	if err != nil {
