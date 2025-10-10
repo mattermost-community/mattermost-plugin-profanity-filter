@@ -20,7 +20,9 @@ type Plugin struct {
 	// setConfiguration for usage.
 	configuration *configuration
 
-	badWordsRegex *regexp.Regexp
+	// Pre-compiled regex patterns for performance
+	asciiWordsRegex    *regexp.Regexp
+	japaneseWordsRegex *regexp.Regexp
 }
 
 func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
@@ -91,4 +93,18 @@ func (p *Plugin) detectAllProfanityWords(text, wordList string) []string {
 	}
 
 	return detected
+}
+
+// getASCIIWordsRegex returns the pre-compiled ASCII words regex pattern
+func (p *Plugin) getASCIIWordsRegex() *regexp.Regexp {
+	p.configurationLock.RLock()
+	defer p.configurationLock.RUnlock()
+	return p.asciiWordsRegex
+}
+
+// getJapaneseWordsRegex returns the pre-compiled Japanese words regex pattern
+func (p *Plugin) getJapaneseWordsRegex() *regexp.Regexp {
+	p.configurationLock.RLock()
+	defer p.configurationLock.RUnlock()
+	return p.japaneseWordsRegex
 }

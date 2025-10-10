@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"regexp"
 	"strings"
 	"unicode"
 
@@ -23,14 +21,8 @@ func removeAccents(s string) string {
 
 // detectASCIIWords uses regex with word boundaries for ASCII words
 func (p *Plugin) detectASCIIWords(text string, asciiWords []string) []string {
-	if len(asciiWords) == 0 {
-		return []string{}
-	}
-
-	// Use existing regex logic with \b boundaries
-	regexStr := fmt.Sprintf(`(?mi)\b(%s)\b`, strings.Join(asciiWords, "|"))
-	regex, err := regexp.Compile(regexStr)
-	if err != nil {
+	regex := p.getASCIIWordsRegex()
+	if regex == nil {
 		return []string{}
 	}
 

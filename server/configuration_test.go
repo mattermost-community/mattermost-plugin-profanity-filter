@@ -6,17 +6,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWordListToRegex(t *testing.T) {
+func TestCompileWordRegexes(t *testing.T) {
 	p := Plugin{
 		configuration: &configuration{
 			BadWordsList: "abc,def ghi",
 		},
 	}
 
-	t.Run("Build Regex", func(t *testing.T) {
-		regexStr := wordListToRegex(p.getConfiguration().BadWordsList)
+	t.Run("Build ASCII Regex", func(t *testing.T) {
+		err := p.compileWordRegexes(p.getConfiguration().BadWordsList)
+		assert.NoError(t, err)
 
-		assert.Equal(t, regexStr, `(?mi)\b(def ghi|abc)\b`)
+		asciiRegex := p.getASCIIWordsRegex()
+		assert.NotNil(t, asciiRegex)
+		assert.Equal(t, `(?mi)\b(def ghi|abc)\b`, asciiRegex.String())
 	})
 
 	p2 := Plugin{
@@ -26,8 +29,11 @@ func TestWordListToRegex(t *testing.T) {
 	}
 
 	t.Run("Build In double Regex", func(t *testing.T) {
-		regexStr := wordListToRegex(p2.getConfiguration().BadWordsList)
+		err := p2.compileWordRegexes(p2.getConfiguration().BadWordsList)
+		assert.NoError(t, err)
 
-		assert.Equal(t, regexStr, `(?mi)\b(abc def|abc)\b`)
+		asciiRegex := p2.getASCIIWordsRegex()
+		assert.NotNil(t, asciiRegex)
+		assert.Equal(t, `(?mi)\b(abc def|abc)\b`, asciiRegex.String())
 	})
 }

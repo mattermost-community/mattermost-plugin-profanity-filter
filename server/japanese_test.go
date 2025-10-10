@@ -1,7 +1,6 @@
 package main
 
 import (
-	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +18,10 @@ func TestJapaneseProfanityFilter(t *testing.T) {
 			ExcludeBots:     false,
 		},
 	}
-	p.badWordsRegex = regexp.MustCompile(wordListToRegex(p.getConfiguration().BadWordsList))
+	// Compile the regex patterns for the test
+	if err := p.compileWordRegexes(p.getConfiguration().BadWordsList); err != nil {
+		t.Fatalf("Failed to compile word regexes: %v", err)
+	}
 
 	t.Run("hiragana profanity word matches", func(t *testing.T) {
 		in := &model.Post{

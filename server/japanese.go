@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/ikawaha/kagome-dict/ipa"
@@ -104,43 +102,24 @@ func (p *Plugin) detectJapaneseWordsWithTokenization(text string, japaneseWords 
 		return detected
 	}
 
-	// Clean up word list
-	var cleanWords []string
-	for _, word := range japaneseWords {
-		word = strings.TrimSpace(word)
-		if word != "" {
-			cleanWords = append(cleanWords, word)
-		}
-	}
-
-	if len(cleanWords) == 0 {
-		return detected
+	// Get the pre-compiled regex
+	regex := p.getJapaneseWordsRegex()
+	if regex == nil {
+		return p.detectJapaneseWords(text, japaneseWords)
 	}
 
 	// Tokenize the Japanese text to create word boundaries
 	tokens := tokenizeJapanese(text)
 	tokenizedText := strings.Join(tokens, " ") // Create spaces between tokens
 
-	// Build regex for Japanese words
-	var escapedWords []string
-	for _, word := range cleanWords {
-		escapedWords = append(escapedWords, regexp.QuoteMeta(strings.ToLower(strings.TrimSpace(word))))
-	}
-
-	regexStr := fmt.Sprintf(`(?i)\b(%s)\b`, strings.Join(escapedWords, "|"))
-	regex, err := regexp.Compile(regexStr)
-	if err != nil {
-		// Fallback to the old tokenization approach
-		return p.detectJapaneseWords(text, japaneseWords)
-	}
-
 	// Find matches in tokenized text
 	matches := regex.FindAllString(strings.ToLower(tokenizedText), -1)
 
 	// Return the original words that match
 	for _, match := range matches {
-		for _, word := range cleanWords {
-			if strings.ToLower(strings.TrimSpace(word)) == match {
+		for _, word := range japaneseWords {
+			word = strings.TrimSpace(word)
+			if word != "" && strings.ToLower(word) == match {
 				detected = append(detected, word)
 				break
 			}
