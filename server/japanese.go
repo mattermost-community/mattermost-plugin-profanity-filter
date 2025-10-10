@@ -1,11 +1,23 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ikawaha/kagome-dict/ipa"
 	"github.com/ikawaha/kagome/v2/tokenizer"
 )
+
+func (p *Plugin) initializeJapaneseTokenizer() error {
+	// Initialize Japanese tokenizer
+	t, err := tokenizer.New(ipa.Dict())
+	if err != nil {
+		return fmt.Errorf("failed to initialize Japanese tokenizer: %w", err)
+	}
+	p.japaneseTokenizer = t
+
+	return nil
+}
 
 // isJapaneseRune checks if a rune is a Japanese character (Hiragana, Katakana, or Kanji)
 func isJapaneseRune(r rune) bool {
@@ -33,14 +45,8 @@ func isJapaneseText(text string) bool {
 }
 
 // tokenizeJapanese tokenizes Japanese text using Kagome morphological analyzer
-func tokenizeJapanese(text string) []string {
-	t, err := tokenizer.New(ipa.Dict())
-	if err != nil {
-		// Fallback: return the original text as single token if tokenizer fails
-		return []string{text}
-	}
-
-	tokens := t.Tokenize(text)
+func tokenizeJapanese(text string, tokenizer *tokenizer.Tokenizer) []string {
+	tokens := tokenizer.Tokenize(text)
 	var words []string
 
 	for _, token := range tokens {
@@ -63,7 +69,7 @@ func (p *Plugin) detectJapaneseWords(text string, japaneseWords []string) []stri
 	}
 
 	// Tokenize the Japanese text
-	tokens := tokenizeJapanese(text)
+	tokens := tokenizeJapanese(text, p.getJapaneseTokenizer())
 
 	// Check each Japanese bad word against the tokenized text
 	for _, badWord := range japaneseWords {
@@ -109,7 +115,7 @@ func (p *Plugin) detectJapaneseWordsWithTokenization(text string, japaneseWords 
 	}
 
 	// Tokenize the Japanese text to create word boundaries
-	tokens := tokenizeJapanese(text)
+	tokens := tokenizeJapanese(text, p.getJapaneseTokenizer())
 	tokenizedText := strings.Join(tokens, " ") // Create spaces between tokens
 
 	// Find matches in tokenized text

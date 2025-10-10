@@ -23,6 +23,11 @@ func TestJapaneseProfanityFilter(t *testing.T) {
 		t.Fatalf("Failed to compile word regexes: %v", err)
 	}
 
+	// Initialize Japanese tokenizer
+	if err := p.initializeJapaneseTokenizer(); err != nil {
+		t.Fatalf("Failed to initialize Japanese tokenizer: %v", err)
+	}
+
 	t.Run("hiragana profanity word matches", func(t *testing.T) {
 		in := &model.Post{
 			Message: "あなたはばかです。",

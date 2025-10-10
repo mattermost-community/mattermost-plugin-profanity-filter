@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ikawaha/kagome/v2/tokenizer"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 )
@@ -23,6 +24,9 @@ type Plugin struct {
 	// Pre-compiled regex patterns for performance
 	asciiWordsRegex    *regexp.Regexp
 	japaneseWordsRegex *regexp.Regexp
+
+	// Pre-initialized Japanese tokenizer for performance
+	japaneseTokenizer *tokenizer.Tokenizer
 }
 
 func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
@@ -107,4 +111,11 @@ func (p *Plugin) getJapaneseWordsRegex() *regexp.Regexp {
 	p.configurationLock.RLock()
 	defer p.configurationLock.RUnlock()
 	return p.japaneseWordsRegex
+}
+
+// getJapaneseTokenizer returns the pre-initialized Japanese tokenizer
+func (p *Plugin) getJapaneseTokenizer() *tokenizer.Tokenizer {
+	p.configurationLock.RLock()
+	defer p.configurationLock.RUnlock()
+	return p.japaneseTokenizer
 }

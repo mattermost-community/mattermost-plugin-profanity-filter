@@ -96,6 +96,11 @@ func (p *Plugin) OnConfigurationChange() error {
 		return err
 	}
 
+	// Initialize Japanese tokenizer
+	if err := p.initializeJapaneseTokenizer(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
