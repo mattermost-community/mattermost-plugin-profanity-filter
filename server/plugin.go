@@ -5,14 +5,10 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"unicode"
 
-	"golang.org/x/text/runes"
-	"golang.org/x/text/transform"
-	"golang.org/x/text/unicode/norm"
-
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/ikawaha/kagome/v2/tokenizer"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
 )
 
 type Plugin struct {
@@ -25,7 +21,12 @@ type Plugin struct {
 	// setConfiguration for usage.
 	configuration *configuration
 
-	badWordsRegex *regexp.Regexp
+	// Pre-compiled regex patterns for performance
+	asciiWordsRegex    *regexp.Regexp
+	japaneseWordsRegex *regexp.Regexp
+
+	// Pre-initialized Japanese tokenizer for performance
+	japaneseTokenizer *tokenizer.Tokenizer
 }
 
 func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
@@ -36,13 +37,12 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 		return post, ""
 	}
 
-	postMessageWithoutAccents := removeAccents(post.Message)
+	// Use hybrid detection system that separates ASCII and non-ASCII word detection for better multilingual support
+	detectedBadWords := p.detectAllProfanityWords(post.Message, configuration.BadWordsList)
 
-	if !p.badWordsRegex.MatchString(postMessageWithoutAccents) {
+	if len(detectedBadWords) == 0 {
 		return post, ""
 	}
-
-	detectedBadWords := p.badWordsRegex.FindAllString(postMessageWithoutAccents, -1)
 
 	if configuration.RejectPosts {
 		p.API.SendEphemeralPost(post.UserId, &model.Post{
@@ -54,11 +54,12 @@ func (p *Plugin) FilterPost(post *model.Post) (*model.Post, string) {
 		return nil, fmt.Sprintf("Profane word not allowed: %s", strings.Join(detectedBadWords, ", "))
 	}
 
+	// Use rune-based replacement for correct character count
 	for _, word := range detectedBadWords {
 		post.Message = strings.ReplaceAll(
 			post.Message,
 			word,
-			strings.Repeat(p.getConfiguration().CensorCharacter, len(word)),
+			strings.Repeat(p.getConfiguration().CensorCharacter, runeLength(word)),
 		)
 	}
 
@@ -73,12 +74,48 @@ func (p *Plugin) MessageWillBeUpdated(_ *plugin.Context, newPost *model.Post, _ 
 	return p.FilterPost(newPost)
 }
 
-func removeAccents(s string) string {
-	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
-	output, _, e := transform.String(t, s)
-	if e != nil {
-		return s
+// runeLength returns the number of visual characters (runes) in a string
+func runeLength(s string) int {
+	return len([]rune(s))
+}
+
+// detectAllProfanityWords uses detection for ASCII and Japanese words
+func (p *Plugin) detectAllProfanityWords(text, wordList string) []string {
+	words := splitWordList(wordList)
+	asciiWords, japaneseWords := separateASCIIAndJapanese(words)
+
+	var detected []string
+
+	// ASCII words: Use existing regex (fast & precise)
+	if len(asciiWords) > 0 {
+		detected = append(detected, p.detectASCIIWords(text, asciiWords)...)
 	}
 
-	return output
+	// Japanese words: Use tokenization + regex approach
+	if len(japaneseWords) > 0 {
+		detected = append(detected, p.detectJapaneseWordsWithTokenization(text, japaneseWords)...)
+	}
+
+	return detected
+}
+
+// getASCIIWordsRegex returns the pre-compiled ASCII words regex pattern
+func (p *Plugin) getASCIIWordsRegex() *regexp.Regexp {
+	p.configurationLock.RLock()
+	defer p.configurationLock.RUnlock()
+	return p.asciiWordsRegex
+}
+
+// getJapaneseWordsRegex returns the pre-compiled Japanese words regex pattern
+func (p *Plugin) getJapaneseWordsRegex() *regexp.Regexp {
+	p.configurationLock.RLock()
+	defer p.configurationLock.RUnlock()
+	return p.japaneseWordsRegex
+}
+
+// getJapaneseTokenizer returns the pre-initialized Japanese tokenizer
+func (p *Plugin) getJapaneseTokenizer() *tokenizer.Tokenizer {
+	p.configurationLock.RLock()
+	defer p.configurationLock.RUnlock()
+	return p.japaneseTokenizer
 }

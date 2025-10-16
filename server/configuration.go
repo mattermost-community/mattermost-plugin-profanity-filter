@@ -86,31 +86,58 @@ func (p *Plugin) OnConfigurationChange() error {
 		return errors.Wrap(err, "failed to load plugin configuration")
 	}
 
+	// Normalize Japanese commas to ASCII commas in BadWordsList for consistent processing
+	configuration.BadWordsList = normalizeWordListCommas(configuration.BadWordsList)
+
 	p.setConfiguration(configuration)
 
-	// Addind space around the words
-	regexString := wordListToRegex(configuration.BadWordsList)
-	regex, err := regexp.Compile(regexString)
-	if err != nil {
+	// Compile regex patterns for both ASCII and Japanese words
+	if err := p.compileWordRegexes(configuration.BadWordsList); err != nil {
 		return err
 	}
 
-	p.badWordsRegex = regex
+	// Initialize Japanese tokenizer
+	if err := p.initializeJapaneseTokenizer(); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func wordListToRegex(wordList string) (regexStr string) {
-	split := strings.Split(wordList, ",")
+// compileWordRegexes compiles regex patterns for both ASCII and Japanese words
+func (p *Plugin) compileWordRegexes(wordList string) error {
+	words := splitWordList(wordList)
+	asciiWords, japaneseWords := separateASCIIAndJapanese(words)
 
-	// Sorting by length because if "bad" and "bad word" are in the list,
-	// we want "bad word" to be the first match
-	sort.Slice(split, func(i, j int) bool { return len(split[i]) > len(split[j]) })
+	// Compile ASCII words regex
+	if len(asciiWords) > 0 {
+		// Sort by length (longest first) to match longer words first
+		sort.Slice(asciiWords, func(i, j int) bool { return len(asciiWords[i]) > len(asciiWords[j]) })
+		asciiRegexStr := fmt.Sprintf(`(?mi)\b(%s)\b`, strings.Join(asciiWords, "|"))
+		asciiRegex, err := regexp.Compile(asciiRegexStr)
+		if err != nil {
+			return fmt.Errorf("failed to compile ASCII words regex: %w", err)
+		}
+		p.asciiWordsRegex = asciiRegex
+	} else {
+		p.asciiWordsRegex = nil
+	}
 
-	regexStr = fmt.Sprintf(
-		`(?mi)\b(%s)\b`,
-		strings.Join(split, "|"),
-	)
+	// Compile Japanese words regex
+	if len(japaneseWords) > 0 {
+		var escapedWords []string
+		for _, word := range japaneseWords {
+			escapedWords = append(escapedWords, regexp.QuoteMeta(strings.ToLower(strings.TrimSpace(word))))
+		}
+		japaneseRegexStr := fmt.Sprintf(`(?i)\b(%s)\b`, strings.Join(escapedWords, "|"))
+		japaneseRegex, err := regexp.Compile(japaneseRegexStr)
+		if err != nil {
+			return fmt.Errorf("failed to compile Japanese words regex: %w", err)
+		}
+		p.japaneseWordsRegex = japaneseRegex
+	} else {
+		p.japaneseWordsRegex = nil
+	}
 
-	return regexStr
+	return nil
 }

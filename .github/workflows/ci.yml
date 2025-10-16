@@ -1,12 +1,21 @@
 name: ci
 on:
-  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
   push:
     branches:
       - master
-      - main
+    tags:
+      - "v*"
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   plugin-ci:
-    uses: mattermost/actions-workflows/.github/workflows/community-plugin-ci.yml@139a051e8651e6246e3764fe342297b73120e590
+    uses: mattermost/actions-workflows/.github/workflows/community-plugin-ci.yml@main
     secrets: inherit
+    with:
+      golang-version: "1.24"
